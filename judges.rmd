@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r, warning = FALSE, message = FALSE}
 library(tidyverse)
 library(reshape2)
+library(gridExtra)
 ```
 
 ## Load the data
@@ -20,29 +21,100 @@ library(reshape2)
 judges = read_csv("judges.csv")
 ```
 
-## Format the date
+## Update a few columns
 ```{r}
+# date
 # date format: abbreviated month --> %b
 #              numerical day     --> %d
 #              four-digit year   --> %Y
 judges$date_submitted = as.Date(judges$date_submitted, "%b. %d, %Y")
 judges$date_of_outcome = as.Date(judges$date_of_outcome, "%b. %d, %Y")
-```
 
-## Cast the number of days
-```{r}
+# num_days
 judges$num_days = as.integer(judges$num_days)
+
+# log
+judges$log_num_days = log(judges$num_days + 1)
 ```
 
-## Plot 1
-```{r}
+## Plot 1-- Scatter Plot
+```{r, fig.width = 16, fig.height = 10}
+reduced_judges = judges[which(judges$outcome != "lapsed"), ]
+reduced_judges = reduced_judges[which(reduced_judges$outcome != "pending"), ]
+
+ggplot(data = reduced_judges,
+       aes(x = date_submitted,
+           y = num_days)) +
+  geom_point(aes(color = outcome),
+             size = 7) +
+  scale_color_manual(values=c("confirmed" = "#4286f4",
+                              "rejected" = "#f44141",
+                              "withdrawn" = "#666161")) +
+  labs(title = "Number of days to confirm Supreme Court Justice",
+       x = "Year Nomination is Submitted",
+       y = "Number of Days")
+
+ggsave("all_judges_scatter.jpg")
+```
+
+## Plot 2-- Scatter with Log Transformation
+```{r, fig.width = 16, fig.height = 8}
+log_df = data.frame(date_submitted = c(reduced_judges$date_submitted, reduced_judges$date_submitted),
+                    num_days = c(reduced_judges$num_days, log(reduced_judges$num_days + 1)),
+                    outcome = c(reduced_judges$outcome, reduced_judges$outcome),
+                    transformation = c(rep("No Transformation", 147), rep("Log Transformed", 147)))
+
+ggplot(data = log_df,
+       aes(x = date_submitted,
+           y = num_days)) +
+  geom_point(aes(color = outcome),
+             size = 6) +
+  scale_color_manual(values=c("confirmed" = "#4286f4",
+                              "rejected" = "#f44141",
+                              "withdrawn" = "#666161")) +
+  facet_wrap(~ transformation,
+             scales = "free") +
+  labs(title = "Number of days to confirm Supreme Court Justice",
+       x = "Year Nomination is Submitted",
+       y = "Number of Days")
+
+ggsave("double_scatter.jpg")
+```
+
+## Plot 3-- Histogram of Confirmation time
+```{r, fig.width = 16, fig.height = 10}
 confirmed_judges = judges[which(judges$outcome == "confirmed"), ]
 
 ggplot(data = confirmed_judges,
-       aes(x = name,
-           y = num_days)) +
-  geom_col() +
-  labs(title = "Number of days to confirm Supreme Court Justice",
-       x = "Name of Judge",
-       y = "Number of Days")
+       aes(x = num_days)) +
+  geom_histogram(bins = 20,
+                 color = "black",
+                 fill = "darkgrey") +
+  labs(title = "Histogram of number of days to confirm Supreme Court Justice",
+       x = "Number of Days",
+       y = "Count")
+
+ggsave("num_days_confirmed_hist.jpg")
 ```
+
+## Plot 3-- Histogram of Age
+```{r, fig.width = 16, fig.height = 10}
+confirmed_judges = judges[which(judges$outcome == "confirmed"), ]
+
+ggplot(data = confirmed_judges,
+       aes(x = age)) +
+  geom_histogram(bins = 15,
+                 color = "black",
+                 fill = "darkgrey") +
+  labs(title = "Histogram of ages of confirmed Supreme Court Justices",
+       x = "Age",
+       y = "Count")
+
+ggsave("confirmed_age_hist.jpg")
+```
+
+## Contact me
+
+* [Twitter](https://twitter.com/malicodes)
+* [LinkedIn](https://www.linkedin.com/in/malaika-handa/)
+* [Resume](https://drive.google.com/file/d/1ammnktVHH-GdZ2UOsGCsUS_VM3w8csh8/view?usp=sharing)

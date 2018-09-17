@@ -1,0 +1,48 @@
+---
+title: "Supreme Court Judges"
+author: "Malaika Handa"
+date: "September 17, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load the library
+```{r, warning = FALSE, message = FALSE}
+library(tidyverse)
+library(reshape2)
+```
+
+## Load the data
+```{r, warning = FALSE, message = FALSE}
+judges = read_csv("judges.csv")
+```
+
+## Format the date
+```{r}
+# date format: abbreviated month --> %b
+#              numerical day     --> %d
+#              four-digit year   --> %Y
+judges$date_submitted = as.Date(judges$date_submitted, "%b. %d, %Y")
+judges$date_of_outcome = as.Date(judges$date_of_outcome, "%b. %d, %Y")
+```
+
+## Cast the number of days
+```{r}
+judges$num_days = as.integer(judges$num_days)
+```
+
+## Plot 1
+```{r}
+confirmed_judges = judges[which(judges$outcome == "confirmed"), ]
+
+ggplot(data = confirmed_judges,
+       aes(x = name,
+           y = num_days)) +
+  geom_col() +
+  labs(title = "Number of days to confirm Supreme Court Justice",
+       x = "Name of Judge",
+       y = "Number of Days")
+```
